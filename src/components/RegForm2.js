@@ -1,33 +1,42 @@
 import React from 'react';
 import { Button, Form, FormGroup, Label, Input, FormText } from 'reactstrap';
 
+import { addDoc, setDoc, collection, doc, getDoc, updateDoc } from 'firebase/firestore';
+import { getFirestore } from 'firebase/firestore';
+import { initializeApp } from 'firebase/app';
+
+const firebaseConfig = {
+  apiKey: 'AIzaSyD8MO_d56OH9HnzmhJfakDAZMSX9MI-OUA',
+  authDomain: 'regform-33ef9.firebaseapp.com',
+  databaseURL: 'https://regform-33ef9-default-rtdb.firebaseio.com',
+  projectId: 'regform-33ef9',
+  storageBucket: 'regform-33ef9.appspot.com',
+  messagingSenderId: '244226144863',
+  appId: '1:244226144863:web:e8bcec7a74e534513279ea',
+};
+
+const app = initializeApp(firebaseConfig);
+
+const db = getFirestore();
+// console.log(db);
+
 const RegForm2 = () => {
-  const getNameOfCompany = e => {
-    localStorage.setItem('nameOfCompany', JSON.stringify(e.target.value));
-  };
+  const getData = e => {
+    const newArr = [...e.target.parentNode].map(el => el.value);
+    const idPreviousArr = localStorage.getItem(`nameOfDocument`);
 
-  const getPosition = e => {
-    localStorage.setItem('position', JSON.stringify(e.target.value));
-  };
+    askServer();
 
-  const getAboutText = e => {
-    localStorage.setItem('aboutText', JSON.stringify(e.target.value));
-  };
+    async function askServer() {
+      const firstForm = doc(db, 'users', idPreviousArr);
+      console.log(firstForm);
 
-  // тут написать функцию отправки на сервер запроса Пост
-  const sendToServer = () => {
-    const items = { ...localStorage };
-    fetch('https://regform-33ef9-default-rtdb.firebaseio.com/', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: JSON.stringify(items),
-    })
-      .then(response => response.json())
-      .then(response => {
-        console.log(response);
+      await updateDoc(firstForm, {
+        company: `${newArr[0]}`,
+        position: `${newArr[1]}`,
+        about: `${newArr[2]}`,
       });
+    }
   };
 
   return (
@@ -38,33 +47,15 @@ const RegForm2 = () => {
         </Label>
         <br />
         <FormGroup>
-          <Input
-            onChange={getNameOfCompany}
-            type="text"
-            name="text"
-            id="exampleCompany"
-            placeholder="Company"
-          />
+          <Input type="text" name="text" id="exampleCompany" placeholder="Company" />
         </FormGroup>
         <br />
         <FormGroup>
-          <Input
-            onChange={getPosition}
-            type="text"
-            name="text"
-            id="examplePosition"
-            placeholder="Position"
-          />
+          <Input type="text" name="text" id="examplePosition" placeholder="Position" />
         </FormGroup>
         <br />
         <FormGroup>
-          <Input
-            onChange={getAboutText}
-            type="textarea"
-            name="text"
-            id="exampleAbout"
-            placeholder="Tell us about you"
-          />
+          <Input type="textarea" name="text" id="exampleAbout" placeholder="Tell us about you" />
         </FormGroup>
         <br />
         <FormGroup>
@@ -74,7 +65,7 @@ const RegForm2 = () => {
         <Button>
           <a href="/">Previous</a>
         </Button>{' '}
-        <Button onClick={sendToServer}>Submit</Button>{' '}
+        <Button onClick={getData}>Submit</Button>{' '}
         <Button>
           <a href="/list">Next</a>
         </Button>
