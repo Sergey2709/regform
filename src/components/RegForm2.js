@@ -1,7 +1,7 @@
-import React from 'react';
+import { React, useState, useEffect } from 'react';
 import { Button, Form, FormGroup, Label, Input, FormText } from 'reactstrap';
 
-import { addDoc, setDoc, collection, doc, getDoc, updateDoc } from 'firebase/firestore';
+import { addDoc, collection } from 'firebase/firestore';
 import { getFirestore } from 'firebase/firestore';
 import { initializeApp } from 'firebase/app';
 
@@ -18,57 +18,151 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 
 const db = getFirestore();
-// console.log(db);
 
 const RegForm2 = () => {
-  const getData = e => {
-    const newArr = [...e.target.parentNode].map(el => el.value);
-    const idPreviousArr = localStorage.getItem(`nameOfDocument`);
+  // Company
+  const [company, setCompany] = useState('');
 
-    askServer();
-
-    async function askServer() {
-      const firstForm = doc(db, 'users', idPreviousArr);
-      console.log(firstForm);
-
-      await updateDoc(firstForm, {
-        company: `${newArr[0]}`,
-        position: `${newArr[1]}`,
-        about: `${newArr[2]}`,
-      });
-    }
+  const settingCompany = e => {
+    return setCompany(e.target.value);
   };
 
+  // Position
+  const [position, setPosition] = useState('');
+
+  const settingPosition = e => {
+    return setPosition(e.target.value);
+  };
+
+  // About
+  const [about, setAbout] = useState('');
+
+  const settingAbout = e => {
+    return setAbout(e.target.value);
+  };
+
+  //img
+
+  const [img, setImg] = useState('');
+
+  const setImage = e => {
+    const file = e.target.files[0];
+
+    let reader = new FileReader();
+    reader.onload = e => {
+      let image = e.target.result;
+      localStorage.setItem('img', image);
+    };
+
+    reader.readAsDataURL(file);
+  };
+
+  useEffect(() => {
+    setCompany(window.localStorage.getItem('company'));
+    setPosition(window.localStorage.getItem('position'));
+    setAbout(window.localStorage.getItem('about'));
+  }, []);
+
+  const pushToLocal = () => {
+    localStorage.setItem('company', company);
+    localStorage.setItem('position', position);
+    localStorage.setItem('about', about);
+  };
+
+  const previous = () => {
+    pushToLocal();
+    window.location.href = '/';
+  };
+
+  const submitted = e => {
+    pushToLocal();
+    askServer();
+  };
+
+  const next = () => {
+    pushToLocal();
+    askServer();
+    window.location.href = '/list';
+  };
+
+  async function askServer() {
+    try {
+      const docRef = await addDoc(collection(db, 'users'), {
+        firstName: localStorage.getItem(`firstName`),
+        lastName: localStorage.getItem(`lastName`),
+        dateOfBirth: localStorage.getItem(`dateOfBirth`),
+        reportSubject: localStorage.getItem(`reportSubject`),
+        phoneNumber: localStorage.getItem(`phoneNumber`),
+        email: localStorage.getItem(`email`),
+        company: localStorage.getItem(`company`),
+        position: localStorage.getItem(`position`),
+        about: localStorage.getItem(`about`),
+        img: localStorage.getItem(`img`),
+      });
+
+      setCompany('');
+      setPosition('');
+      setAbout('');
+
+      localStorage.clear();
+    } catch (e) {
+      console.error('Error adding document: ', e);
+    }
+  }
+
   return (
-    <div>
+    <div
+      style={{
+        maxWidth: '50%',
+        display: 'flex',
+        flexDirection: 'column',
+        margin: 'auto',
+      }}
+    >
       <Form>
         <Label for="exampleForm">
           <h2>To participate in the conference, please fill out the form</h2>
         </Label>
         <br />
         <FormGroup>
-          <Input type="text" name="text" id="exampleCompany" placeholder="Company" />
+          <Input
+            onChange={settingCompany}
+            type="text"
+            name="text"
+            id="exampleCompany"
+            placeholder="Company"
+            value={company}
+          />
         </FormGroup>
         <br />
         <FormGroup>
-          <Input type="text" name="text" id="examplePosition" placeholder="Position" />
+          <Input
+            onChange={settingPosition}
+            type="text"
+            name="text"
+            id="examplePosition"
+            placeholder="Position"
+            value={position}
+          />
         </FormGroup>
         <br />
         <FormGroup>
-          <Input type="textarea" name="text" id="exampleAbout" placeholder="Tell us about you" />
+          <Input
+            onChange={settingAbout}
+            type="textarea"
+            name="text"
+            id="exampleAbout"
+            placeholder="Tell us about you"
+            value={about}
+          />
         </FormGroup>
         <br />
         <FormGroup>
-          <Input type="file" name="file" id="exampleFile" />
+          <Input type="file" name="file" id="exampleFile" onChange={setImage} />
           <FormText color="muted">You can add your photo</FormText>
         </FormGroup>
-        <Button>
-          <a href="/">Previous</a>
-        </Button>{' '}
-        <Button onClick={getData}>Submit</Button>{' '}
-        <Button>
-          <a href="/list">Next</a>
-        </Button>
+        <Button onClick={previous}>Previous</Button> <Button onClick={submitted}>Submit</Button>{' '}
+        <Button onClick={next}>Next</Button>
       </Form>
     </div>
   );

@@ -1,21 +1,47 @@
-import React from 'react';
-import { Table } from 'reactstrap';
+import React from "react";
+import { Table } from "reactstrap";
+import { getDatabase, ref, child, get } from "firebase/database";
 
-const List = props => {
+const List = () => {
+
+  const dbRef = ref(getDatabase());
+  console.log(dbRef);
+  get(child(dbRef, `users`))
+    .then((snapshot) => {
+      // if (snapshot.exists()) {
+        console.log(snapshot.child); // ishi
+      // } else {
+        // console.log("No data available");
+      // }
+    })
+    .catch((error) => {
+      console.error(error);
+    });
+
   return (
-    <Table striped>
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>First Name</th>
-          <th>Last Name</th>
-          <th>Username</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr></tr>
-      </tbody>
-    </Table>
+    <div
+      // style={{
+      //   maxWidth: "80%",
+      //   display: "flex",
+      //   flexDirection: "column",
+      //   margin: "auto",
+      // }}
+    >
+      <Table striped>
+        <thead>
+          <tr>
+            <th>Avatar</th>
+            <th>Name</th>
+            <th>Phone</th>
+            <th>Email</th>
+            <th>Report</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr></tr>
+        </tbody>
+      </Table>
+    </div>
   );
 };
 
