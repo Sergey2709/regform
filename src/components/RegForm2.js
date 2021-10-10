@@ -2,48 +2,43 @@ import { React, useState, useEffect } from 'react';
 import { Button, Form, FormGroup, Label, Input, FormText } from 'reactstrap';
 
 import { addDoc, collection } from 'firebase/firestore';
-import { getFirestore } from 'firebase/firestore';
-import { initializeApp } from 'firebase/app';
 
-const firebaseConfig = {
-  apiKey: 'AIzaSyD8MO_d56OH9HnzmhJfakDAZMSX9MI-OUA',
-  authDomain: 'regform-33ef9.firebaseapp.com',
-  databaseURL: 'https://regform-33ef9-default-rtdb.firebaseio.com',
-  projectId: 'regform-33ef9',
-  storageBucket: 'regform-33ef9.appspot.com',
-  messagingSenderId: '244226144863',
-  appId: '1:244226144863:web:e8bcec7a74e534513279ea',
-};
-
-const app = initializeApp(firebaseConfig);
-
-const db = getFirestore();
+import { db } from '../plugins/firebase';
 
 const RegForm2 = () => {
-  // Company
+
   const [company, setCompany] = useState('');
+  const [position, setPosition] = useState('');
+  const [about, setAbout] = useState('');
+  const [img, setImg] = useState('');
+
+  const [companyDirty, setCompanyDirty] = useState(false);
+  const [positionDirty, setPositionDirty] = useState(false);
+
+  const [companyError, setCompanyError] = useState('Can`t be empty');
+  const [positionError, setPositionError] = useState('Can`t be empty');
 
   const settingCompany = e => {
-    return setCompany(e.target.value);
+    setCompany(e.target.value);
+    if (e.target.value < 1 || e.target.value > 20) {
+      setCompanyError('Can`t be empty');
+    } else {
+      setCompanyError('');
+    }
   };
-
-  // Position
-  const [position, setPosition] = useState('');
 
   const settingPosition = e => {
-    return setPosition(e.target.value);
+    setPosition(e.target.value);
+    if (e.target.value < 1 || e.target.value > 20) {
+      setPositionError('Can`t be empty');
+    } else {
+      setPositionError('');
+    }
   };
-
-  // About
-  const [about, setAbout] = useState('');
 
   const settingAbout = e => {
-    return setAbout(e.target.value);
+    setAbout(e.target.value);
   };
-
-  //img
-
-  const [img, setImg] = useState('');
 
   const setImage = e => {
     const file = e.target.files[0];
@@ -57,10 +52,35 @@ const RegForm2 = () => {
     reader.readAsDataURL(file);
   };
 
+  const blurHandler = e => {
+    switch (e.target.name) {
+      case 'company':
+        setCompanyDirty(true);
+        break;
+      case 'position':
+        setPositionDirty(true);
+        break;
+    }
+  };
+
   useEffect(() => {
-    setCompany(window.localStorage.getItem('company'));
-    setPosition(window.localStorage.getItem('position'));
-    setAbout(window.localStorage.getItem('about'));
+      if (window.localStorage.getItem('company') === null) {
+        setCompany('');
+      } else {
+        setCompany(window.localStorage.getItem('company'));
+      }
+
+      if (window.localStorage.getItem('position') === null) {
+        setPosition('');
+      } else {
+        setPosition(window.localStorage.getItem('position'));
+      }
+    
+      if (window.localStorage.getItem('about') === null) {
+        setAbout('');
+      } else {
+        setAbout(window.localStorage.getItem('about'));
+      }
   }, []);
 
   const pushToLocal = () => {
@@ -81,7 +101,6 @@ const RegForm2 = () => {
 
   const next = () => {
     pushToLocal();
-    askServer();
     window.location.href = '/list';
   };
 
@@ -125,10 +144,12 @@ const RegForm2 = () => {
         </Label>
         <br />
         <FormGroup>
+          {companyDirty && companyError && <div style={{ color: 'red' }}>{companyError}</div>}
           <Input
             onChange={settingCompany}
+            onBlur={e => blurHandler(e)}
             type="text"
-            name="text"
+            name="company"
             id="exampleCompany"
             placeholder="Company"
             value={company}
@@ -136,10 +157,12 @@ const RegForm2 = () => {
         </FormGroup>
         <br />
         <FormGroup>
+          {positionDirty && positionError && <div style={{ color: 'red' }}>{positionError}</div>}
           <Input
             onChange={settingPosition}
+            onBlur={e => blurHandler(e)}
             type="text"
-            name="text"
+            name="position"
             id="examplePosition"
             placeholder="Position"
             value={position}
@@ -150,7 +173,7 @@ const RegForm2 = () => {
           <Input
             onChange={settingAbout}
             type="textarea"
-            name="text"
+            name="about"
             id="exampleAbout"
             placeholder="Tell us about you"
             value={about}
@@ -158,7 +181,7 @@ const RegForm2 = () => {
         </FormGroup>
         <br />
         <FormGroup>
-          <Input type="file" name="file" id="exampleFile" onChange={setImage} />
+          <Input type="file" name="image" id="exampleFile" onChange={setImage} />
           <FormText color="muted">You can add your photo</FormText>
         </FormGroup>
         <Button onClick={previous}>Previous</Button> <Button onClick={submitted}>Submit</Button>{' '}

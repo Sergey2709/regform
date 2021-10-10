@@ -23,42 +23,36 @@ const db = getFirestore();
 const RegForm = props => {
   // firstName
   const [firstName, setFirstName] = useState('');
-
   const settingFirstName = e => {
     return setFirstName(e.target.value);
   };
 
   // lastName
   const [lastName, setLastName] = useState('');
-
   const settingLastName = e => {
     return setLastName(e.target.value);
   };
 
   //dateOfBirth
   const [dateOfBirth, setDateOfBirth] = useState('');
-
   const settingDateOfBirth = e => {
     return setDateOfBirth(e.target.value);
   };
 
   //reportSubject
   const [reportSubject, setReportSubject] = useState('');
-
   const settingReportSubject = e => {
     return setReportSubject(e.target.value);
   };
 
   //phoneNumber
   const [phoneNumber, setPhoneNumber] = useState('');
-
   const settingPhoneNumber = e => {
     return setPhoneNumber(e);
   };
 
   //email
   const [email, setEmail] = useState('');
-
   const settingEmail = e => {
     return setEmail(e.target.value);
   };
@@ -101,9 +95,12 @@ const RegForm = props => {
             <Input
               onChange={settingFirstName}
               type="text"
+              minLength="1"
+              maxLength="15"
               name="firstName"
               id="exampleText"
               value={firstName}
+              // ref={register}
               placeholder="Enter your first name"
             />
           </FormGroup>
@@ -112,9 +109,12 @@ const RegForm = props => {
             <Input
               onChange={settingLastName}
               type="text"
+              minLength="1"
+              maxLength="15"
               name="lastName"
               id="exampleText"
               value={lastName}
+              // ref={register}
               placeholder="Enter your last name"
             />
           </FormGroup>
@@ -138,13 +138,11 @@ const RegForm = props => {
               id="exampleTextArea"
               value={reportSubject}
               placeholder="Report subject"
-            >
-              {reportSubject}
-            </Input>
+            />
           </FormGroup>
           <br />
 
-          <PhoneInput country={'us'} onChange={settingPhoneNumber} value={phoneNumber} />
+          <PhoneInput country={'us'} onChange={settingPhoneNumber} />
           <br />
 
           <FormGroup>
@@ -154,11 +152,14 @@ const RegForm = props => {
               name="email"
               id="exampleEmail"
               placeholder="Email"
+              // ref={register}
               value={email}
             />
           </FormGroup>
 
-          <Button onClick={getData}>Next</Button>
+          <Button onClick={getData} type="submit">
+            Next
+          </Button>
         </Form>
       </div>
     </div>
