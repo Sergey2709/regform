@@ -3,6 +3,9 @@ import { Button, Form, FormGroup, Label, Input } from 'reactstrap';
 import PhoneInput from 'react-phone-input-2';
 import 'react-phone-input-2/lib/style.css';
 
+import { addDoc, collection, query, onSnapshot } from 'firebase/firestore';
+import { db } from '../plugins/firebase';
+
 import Map from './Map';
 
 const NewRegForm = props => {
@@ -22,6 +25,9 @@ const NewRegForm = props => {
   const [lastNameError, setLastNameError] = useState('Can`t be empty');
   const [dateError, setDateError] = useState('Can`t be empty');
   const [emailError, setEmailError] = useState('Can`t be empty');
+  const [validationError, setValidationError] = useState('');
+
+  const [output, setOutput] = useState([]);
 
   useEffect(() => {
     if (window.localStorage.getItem('firstName') === null) {
@@ -59,56 +65,114 @@ const NewRegForm = props => {
     } else {
       setEmail(window.localStorage.getItem('email'));
     }
+
+    const q = query(collection(db, 'users'));
+    const userArr = [];
+    onSnapshot(q, snaps => {
+      snaps.forEach(doc => {
+        const userObj = doc._document.data.value.mapValue.fields;
+        userArr.push(userObj);
+      });
+      setOutput(userArr);
+    });
   }, []);
 
-  const getData = e => {
+  const pushToLocal = () => {
     localStorage.setItem('phoneNumber', phone);
     localStorage.setItem('reportSubject', report);
     localStorage.setItem('dateOfBirth', date);
     localStorage.setItem('lastName', lastName);
     localStorage.setItem('firstName', firstName);
     localStorage.setItem('email', email);
-    window.location.href = '/step2';
   };
+
+  async function getData(e) {
+    pushToLocal();
+    try {
+      const docRef = await addDoc(collection(db, 'users'), {
+        firstName: localStorage.getItem(`firstName`),
+        lastName: localStorage.getItem(`lastName`),
+        dateOfBirth: localStorage.getItem(`dateOfBirth`),
+        reportSubject: localStorage.getItem(`reportSubject`),
+        phoneNumber: localStorage.getItem(`phoneNumber`),
+        email: localStorage.getItem(`email`),
+      });
+      localStorage.setItem('id', docRef.id);
+    } catch (e) {
+      console.error('Error adding document: ', e);
+    }
+
+    if (firstName && lastName && phone && date && email) {
+      setValidationError('');
+      window.location.href = '/step2';
+    } else {
+      setValidationError('Invalid data, try again');
+    }
+  }
 
   const settingFirstName = e => {
     setFirstName(e.target.value);
-    if (e.target.value < 1 || e.target.value > 20) {
+    localStorage.setItem('firstName', e.target.value);
+    if (e.target.value < 1) {
       setFirstNameError('Can`t be empty');
     } else {
       setFirstNameError('');
     }
   };
+
   const settingLastName = e => {
     setLastName(e.target.value);
+    localStorage.setItem('lastName', e.target.value);
     if (e.target.value < 1) {
       setLastNameError('Can`t be empty');
     } else {
       setLastNameError('');
     }
   };
+
   const settingDateOfBirth = e => {
     setDate(e.target.value);
+    localStorage.setItem('dateOfBirth', e.target.value);
     if (e.target.value < 1) {
       setDateError('Can`t be empty');
     } else {
       setDateError('');
     }
   };
+
   const settingReportSubject = e => {
     setReport(e.target.value);
+    localStorage.setItem('reportSubject', e.target.value);
   };
+
   const settingPhoneNumber = e => {
     setPhone(e);
+    localStorage.setItem('phoneNumber', e);
   };
+
+  // const checkEmail = () => {
+  //   const duplicateEmail = output.filter(el => el.email.stringValue === e.target.value);
+  // }
+
   const settingEmail = e => {
-    setEmail(e.target.value);
-    const re =
-      /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-    if (!re.test(String(e.target.value).toLowerCase())) {
-      setEmailError('incorrect email');
-    } else {
-      setEmailError('');
+    const duplicateEmail = output.map(el => {
+      if (el.email.stringValue === e.target.value) {
+        setEmailError('This email is used');
+        return 1; 
+      }
+    });
+
+    if (!duplicateEmail) {
+      setEmail(e.target.value);
+      localStorage.setItem('email', e.target.value);
+      const re =
+        /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+      if (!re.test(String(e.target.value).toLowerCase())) {
+        setEmailError('incorrect email');
+      } else {
+        setEmailError('');
+        localStorage.setItem('email', e.target.value);
+      }
     }
   };
 
@@ -125,6 +189,8 @@ const NewRegForm = props => {
         break;
       case 'email':
         setEmailDirty(true);
+        break;
+      default:
         break;
     }
   };
@@ -149,8 +215,8 @@ const NewRegForm = props => {
               <div style={{ color: 'red' }}>{firstNameError}</div>
             )}
             <Input
-              onChange={e => settingFirstName(e)}
-              onBlur={e => blurHandler(e)}
+              onChange={settingFirstName}
+              onBlur={blurHandler}
               type="text"
               name="firstName"
               value={firstName}
@@ -199,7 +265,6 @@ const NewRegForm = props => {
             country={'us'}
           />
           <br />
-
           <FormGroup>
             {emailDirty && emailError && <div style={{ color: 'red' }}>{emailError}</div>}
             <Input
@@ -211,8 +276,11 @@ const NewRegForm = props => {
               placeholder="Email"
             />
           </FormGroup>
-
-          <Button onClick={getData}>Next</Button>
+          <br />
+          {validationError && <div style={{ color: 'red' }}>{validationError}</div>}
+          <div style={{ display: 'flex', justifyContent: 'right' }}>
+            <Button onClick={getData}>Next</Button>
+          </div>
         </Form>
       </div>
     </div>

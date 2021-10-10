@@ -1,29 +1,29 @@
 import { React, useState, useEffect } from 'react';
 import { Button, Form, FormGroup, Label, Input, FormText } from 'reactstrap';
 
-import { addDoc, collection } from 'firebase/firestore';
+import { setDoc, doc } from 'firebase/firestore';
 
 import { db } from '../plugins/firebase';
 
 const RegForm2 = () => {
-
   const [company, setCompany] = useState('');
   const [position, setPosition] = useState('');
   const [about, setAbout] = useState('');
-  const [img, setImg] = useState('');
 
   const [companyDirty, setCompanyDirty] = useState(false);
   const [positionDirty, setPositionDirty] = useState(false);
 
   const [companyError, setCompanyError] = useState('Can`t be empty');
   const [positionError, setPositionError] = useState('Can`t be empty');
+  const [validationError, setValidationError] = useState('');
 
   const settingCompany = e => {
     setCompany(e.target.value);
-    if (e.target.value < 1 || e.target.value > 20) {
+    if (e.target.value < 1) {
       setCompanyError('Can`t be empty');
     } else {
       setCompanyError('');
+      localStorage.setItem('company', e.target.value);
     }
   };
 
@@ -33,23 +33,28 @@ const RegForm2 = () => {
       setPositionError('Can`t be empty');
     } else {
       setPositionError('');
+      localStorage.setItem('position', e.target.value);
     }
   };
 
   const settingAbout = e => {
     setAbout(e.target.value);
+    localStorage.setItem('about', e.target.value);
   };
 
   const setImage = e => {
     const file = e.target.files[0];
+    if (e.target.files[0]) {
+      let reader = new FileReader();
+      reader.onload = e => {
+        let image = e.target.result;
+        localStorage.setItem('img', image);
+      };
 
-    let reader = new FileReader();
-    reader.onload = e => {
-      let image = e.target.result;
-      localStorage.setItem('img', image);
-    };
-
-    reader.readAsDataURL(file);
+      reader.readAsDataURL(file);
+    } else {
+      localStorage.setItem('img', '#');
+    }
   };
 
   const blurHandler = e => {
@@ -60,27 +65,29 @@ const RegForm2 = () => {
       case 'position':
         setPositionDirty(true);
         break;
+      default:
+        break;
     }
   };
 
   useEffect(() => {
-      if (window.localStorage.getItem('company') === null) {
-        setCompany('');
-      } else {
-        setCompany(window.localStorage.getItem('company'));
-      }
+    if (window.localStorage.getItem('company') === null) {
+      setCompany('');
+    } else {
+      setCompany(window.localStorage.getItem('company'));
+    }
 
-      if (window.localStorage.getItem('position') === null) {
-        setPosition('');
-      } else {
-        setPosition(window.localStorage.getItem('position'));
-      }
-    
-      if (window.localStorage.getItem('about') === null) {
-        setAbout('');
-      } else {
-        setAbout(window.localStorage.getItem('about'));
-      }
+    if (window.localStorage.getItem('position') === null) {
+      setPosition('');
+    } else {
+      setPosition(window.localStorage.getItem('position'));
+    }
+
+    if (window.localStorage.getItem('about') === null) {
+      setAbout('');
+    } else {
+      setAbout(window.localStorage.getItem('about'));
+    }
   }, []);
 
   const pushToLocal = () => {
@@ -95,18 +102,27 @@ const RegForm2 = () => {
   };
 
   const submitted = e => {
-    pushToLocal();
-    askServer();
+    if (company && position) {
+      setValidationError('');
+      pushToLocal();
+      askServer();
+    } else {
+      setValidationError('Invalid data, try again');
+    }
   };
 
   const next = () => {
     pushToLocal();
     window.location.href = '/list';
+    if (!company && !position && !about) {
+      localStorage.clear();
+    }
   };
 
   async function askServer() {
-    try {
-      const docRef = await addDoc(collection(db, 'users'), {
+    const nameOfDoc = localStorage.getItem(`id`);
+    if (nameOfDoc) {
+      await setDoc(doc(db, 'users', `${nameOfDoc}`), {
         firstName: localStorage.getItem(`firstName`),
         lastName: localStorage.getItem(`lastName`),
         dateOfBirth: localStorage.getItem(`dateOfBirth`),
@@ -118,14 +134,11 @@ const RegForm2 = () => {
         about: localStorage.getItem(`about`),
         img: localStorage.getItem(`img`),
       });
-
       setCompany('');
       setPosition('');
       setAbout('');
 
       localStorage.clear();
-    } catch (e) {
-      console.error('Error adding document: ', e);
     }
   }
 
@@ -182,10 +195,21 @@ const RegForm2 = () => {
         <br />
         <FormGroup>
           <Input type="file" name="image" id="exampleFile" onChange={setImage} />
-          <FormText color="muted">You can add your photo</FormText>
+          <FormText color="muted">You can add your PNG file</FormText>
         </FormGroup>
-        <Button onClick={previous}>Previous</Button> <Button onClick={submitted}>Submit</Button>{' '}
-        <Button onClick={next}>Next</Button>
+        <br />
+        {validationError && <div style={{ color: 'red' }}>{validationError}</div>}
+        <div style={{ display: 'flex', justifyContent: 'space-around' }}>
+          <Button onClick={previous} style={{ width: '100px' }}>
+            Previous
+          </Button>
+          <Button onClick={submitted} style={{ width: '100px', background: 'green' }}>
+            Submit
+          </Button>{' '}
+          <Button onClick={next} style={{ width: '100px' }}>
+            Next
+          </Button>
+        </div>
       </Form>
     </div>
   );
