@@ -2,7 +2,9 @@ import { React, useState, useEffect } from 'react';
 import { Table, Button } from 'reactstrap';
 
 import { collection, query, onSnapshot } from 'firebase/firestore';
-import {db} from '../plugins/firebase';
+import { db } from '../plugins/firebase';
+
+import defaultImg from '../image/112.jpg';
 
 const List = () => {
   const [output, setOutput] = useState([]);
@@ -19,8 +21,16 @@ const List = () => {
     });
   }, []);
 
-  const previous = () => {
-    window.location.href = '/step2';
+  const register = () => {
+    window.location.href = '/';
+  };
+
+  const getPathImg = pathImg => {
+    if (pathImg) {
+      return pathImg;
+    } else {
+      return defaultImg;
+    }
   };
 
   return (
@@ -47,7 +57,7 @@ const List = () => {
               <tr key={el.lastName.stringValue + el.firstName.stringValue + el.email.stringValue}>
                 <th>
                   <img
-                    src={el.img.stringValue}
+                    src={getPathImg(el.img.stringValue)}
                     alt="Your avatar"
                     style={{
                       height: '40px',
@@ -55,15 +65,15 @@ const List = () => {
                   />
                 </th>
                 <th>{`${el.firstName.stringValue} ${el.lastName.stringValue}`}</th>
-                <th>{el.reportSubject.stringValue}</th>
                 <th>{el.email.stringValue}</th>
+                <th>{el.reportSubject.stringValue}</th>
               </tr>
             );
           })}
         </tbody>
       </Table>
-      <Button onClick={previous} style={{ width: '100px' }}>
-        Previous
+      <Button onClick={register} style={{ width: '100px' }}>
+        Register
       </Button>
     </div>
   );
